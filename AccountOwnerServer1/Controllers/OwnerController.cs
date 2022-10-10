@@ -4,6 +4,7 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace AccountOwnerServer1.Controllers
 {
@@ -26,21 +27,25 @@ namespace AccountOwnerServer1.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAllOwners()
+        // [FromQuery] -> point out that we’ll be using query parameters to define which page and how many owners we are requesting
+        public IActionResult GetOwners([FromQuery] OwnerParameters ownerParameters)
         {
-            try
-            {
-                var owners = _repository.Owner.GetAllOwners();
-                _logger.LogInfo($"Returned all owners from database.");
+            var owners = _repository.Owner.GetOwners(ownerParameters);
 
-                var ownersResult = _mapper.Map<IEnumerable<OwnerDto>>(owners);
-                return Ok(ownersResult);
-            }
-            catch (Exception ex)
+            var metadata = new
             {
-                _logger.LogError($"Something went wrong inside GetAllOwners action: {ex.Message}");
-                return StatusCode(500, "Internal server error");
-            }
+                owners.TotalCount,
+                owners.PageSize,
+                owners.CurrentPage,
+                owners.HasNext,
+                owners.HasPrevious
+            };
+
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
+
+            _logger.LogInfo($"Returned {owners.TotalCount} owners from database.");
+
+            return Ok(owners);
         }
 
         [HttpGet("{id}", Name = "OwnerById")]
@@ -49,21 +54,26 @@ namespace AccountOwnerServer1.Controllers
             try
             {
                 var owner = _repository.Owner.GetOwnerById(id);
+
                 if (owner is null)
                 {
                     _logger.LogError($"Owner with id: {id}, hasn't been found in db.");
+
                     return NotFound();
                 }
                 else
                 {
                     _logger.LogInfo($"Returned owner with id: {id}");
+
                     var ownerResult = _mapper.Map<OwnerDto>(owner);
+
                     return Ok(ownerResult);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Something went wrong inside GetOwnerById action: {ex.Message}");
+
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -90,6 +100,7 @@ namespace AccountOwnerServer1.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Something went wrong inside GetOwnerWithDetails action: {ex.Message}");
+
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -110,14 +121,19 @@ namespace AccountOwnerServer1.Controllers
                     return BadRequest("Invalid model object");
                 }
                 var ownerEntity = _mapper.Map<Owner>(owner);
+
                 _repository.Owner.CreateOwner(ownerEntity);
+
                 _repository.Save();
+
                 var createdOwner = _mapper.Map<OwnerDto>(ownerEntity);
+
                 return CreatedAtRoute("OwnerById", new { id = createdOwner.Id }, createdOwner);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Something went wrong inside CreateOwner action: {ex.Message}");
+
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -131,27 +147,35 @@ namespace AccountOwnerServer1.Controllers
                 if (owner is null)
                 {
                     _logger.LogError("Owner object sent from client is null.");
+
                     return BadRequest("Owner object is null");
                 }
                 if (!ModelState.IsValid)
                 {
                     _logger.LogError("Invalid owner object sent from client.");
+
                     return BadRequest("Invalid model object");
                 }
                 var ownerEntity = _repository.Owner.GetOwnerById(id);
+
                 if (ownerEntity is null)
                 {
                     _logger.LogError($"Owner with id: {id}, hasn't been found in db.");
+
                     return NotFound();
                 }
                 _mapper.Map(owner, ownerEntity);
+
                 _repository.Owner.UpdateOwner(ownerEntity);
+
                 _repository.Save();
+
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Something went wrong inside UpdateOwner action: {ex.Message}");
+
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -163,18 +187,23 @@ namespace AccountOwnerServer1.Controllers
             try
             {
                 var owner = _repository.Owner.GetOwnerById(id);
+
                 if (owner == null)
                 {
                     _logger.LogError($"Owner with id: {id}, hasn't been found in db.");
+
                     return NotFound();
                 }
                 _repository.Owner.DeleteOwner(owner);
+
                 _repository.Save();
+
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Something went wrong inside DeleteOwner action: {ex.Message}");
+
                 return StatusCode(500, "Internal server error");
             }
         }
