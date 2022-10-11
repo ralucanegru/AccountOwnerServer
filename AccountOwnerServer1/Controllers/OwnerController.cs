@@ -30,6 +30,12 @@ namespace AccountOwnerServer1.Controllers
         // [FromQuery] -> point out that we’ll be using query parameters to define which page and how many owners we are requesting
         public IActionResult GetOwners([FromQuery] OwnerParameters ownerParameters)
         {
+            // Its purpose is to tell us if the max year is indeed greater then min year
+            if (!ownerParameters.ValidYearRange)
+            {
+                return BadRequest("Max year of birth cannot be less than min year of birth");
+            }
+
             var owners = _repository.Owner.GetOwners(ownerParameters);
 
             var metadata = new
