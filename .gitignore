@@ -363,4 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Log files
-internal_logs/internallog.txt
+internal_logs/
