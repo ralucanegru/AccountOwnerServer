@@ -17,15 +17,6 @@ namespace Repository
 
         public PagedList<Owner> GetOwners(OwnerParameters ownerParameters)
         {
-            // filtering 
-            // We are using FindByCondition method to find all the owners with the DateOfBirth between MaxYearOfBirth and MinYearOfBirth. 
-            /*
-            var owners = FindByCondition(o => o.DateOfBirth.Year >= ownerParameters.MinYearOfBirth &&
-                               o.DateOfBirth.Year <= ownerParameters.MaxYearOfBirth)
-                           .OrderBy(on => on.Name);
-
-            return PagedList<Owner>.ToPagedList(FindAll().OrderBy(on => on.Name), ownerParameters.PageNumber, ownerParameters.PageSize);
-            */
 
             // searching
             var owners = FindByCondition(o => o.DateOfBirth.Year >= ownerParameters.MinYearOfBirth &&
